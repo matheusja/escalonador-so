@@ -1,8 +1,12 @@
+#Descrição do trabalho
 Especifique e implemente um simulador do mecanismo de escalonamento de processos do tipo multifilas, com as filas representando processos com diferentes prioridades. Em uma fila, os processos executam em round-robin, havendo preempção entre as filas. Este simulador possui como entrada quatro parâmetros:
 
 ..* O número de CPUs disponíveis
+
 ..* Duração do slice de CPU entregue a cada processo
+
 ..* A quantidade de memória disponível (em GB)
+
 ..* O nome de um arquivo com a descrição dos processos que serão executados
 
 O modelo de simulador deve implementar "simulação discreta" e manter um relógio que contabilize o avanço do tempo. Nesta implementação, a unidade de tempo é o slice.
