@@ -40,10 +40,10 @@ chegada, lançamento, duração projetada, duração observada
 ```
 Onde:
 
- *chegada: representa o tempo em que o processo foi recebido pelo SO
- *lançamento: tempo em que o processo foi lançado efetivamente (se igual à chegada, não houve atrasos)
- *duração projetada: é a duração informada no arquivo de entrada para o processo
- *duração observada: contabiliza o tempo necessário para execução do processo
+ * chegada: representa o tempo em que o processo foi recebido pelo SO
+ * lançamento: tempo em que o processo foi lançado efetivamente (se igual à chegada, não houve atrasos)
+ * duração projetada: é a duração informada no arquivo de entrada para o processo
+ * duração observada: contabiliza o tempo necessário para execução do processo
 
 ```
 0, 0, 10, 10
