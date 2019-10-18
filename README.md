@@ -1,13 +1,10 @@
 # Descrição do trabalho
 Especifique e implemente um simulador do mecanismo de escalonamento de processos do tipo multifilas, com as filas representando processos com diferentes prioridades. Em uma fila, os processos executam em round-robin, havendo preempção entre as filas. Este simulador possui como entrada quatro parâmetros:
 
-..*O número de CPUs disponíveis
-
-..*Duração do slice de CPU entregue a cada processo
-
-..*A quantidade de memória disponível (em GB)
-
-..*O nome de um arquivo com a descrição dos processos que serão executados
+ * O número de CPUs disponíveis
+ * Duração do slice de CPU entregue a cada processo
+ * A quantidade de memória disponível (em GB)
+ * O nome de um arquivo com a descrição dos processos que serão executados
 
 O modelo de simulador deve implementar "simulação discreta" e manter um relógio que contabilize o avanço do tempo. Nesta implementação, a unidade de tempo é o slice.
 
@@ -16,10 +13,10 @@ O arquivo de descrição dos processos descreve os processos que serão executad
 ```chegada, duração, memória, prioridade```
 
 Onde:
-..*chegada: representa o tempo em que o processo é recebido pelo SO
-..*duração: número de slices necessários para executar o processo
-..*memória: quantidade de memória (em GB) necessário à execução do processo (use apenas múltiplos de 64 GB)
-..*prioridade: um valor entre 0 (zero) e 4, sendo 0 a mais alta prioridade
+ * chegada: representa o tempo em que o processo é recebido pelo SO
+ * duração: número de slices necessários para executar o processo
+ * memória: quantidade de memória (em GB) necessário à execução do processo (use apenas múltiplos de 64 GB)
+ * prioridade: um valor entre 0 (zero) e 4, sendo 0 a mais alta prioridade
  
  Assim, no exemplo:
 
@@ -43,10 +40,10 @@ chegada, lançamento, duração projetada, duração observada
 ```
 Onde:
 
-..*chegada: representa o tempo em que o processo foi recebido pelo SO
-..*lançamento: tempo em que o processo foi lançado efetivamente (se igual à chegada, não houve atrasos)
-..*duração projetada: é a duração informada no arquivo de entrada para o processo
-..*duração observada: contabiliza o tempo necessário para execução do processo
+ *chegada: representa o tempo em que o processo foi recebido pelo SO
+ *lançamento: tempo em que o processo foi lançado efetivamente (se igual à chegada, não houve atrasos)
+ *duração projetada: é a duração informada no arquivo de entrada para o processo
+ *duração observada: contabiliza o tempo necessário para execução do processo
 
 ```
 0, 0, 10, 10
