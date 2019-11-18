@@ -57,6 +57,7 @@ std::istream &operator>>(std::istream &strm, processo_guardado &reg_processo) {
 
 class fila_de_processos {
 private:
+	std::vector<processo_guardado> processos_a_lancar;
 	std::queue<processo_na_fila> processos;
 	int prioridade;
 	bool degradar; /* Se é possível que a prioridade caia */
@@ -71,7 +72,7 @@ public:
 		processos.push(processo);
 	}
 	bool vazia() {
-		return processos.empty();
+		return processos.empty() && processos_a_lancar.empty();
 	}
 }
 
@@ -81,11 +82,11 @@ private:
 	int cpus;
 	long int memoria;
 	std::vector<fila_de_processos> filas;
-	std::vector<processo_recebido> processos_esperando_lancamento;
-	std::vector<processo_guardado> processos_futuros;
+	std::vector<processo_guardado> processos_a_receber;
 	std::istream &istrm;
 	
 	bool done() {
+		for(
 		for(fila_de_processos fila : filas) {
 			if (!fila.vazia()) {
 				return false;
@@ -109,12 +110,17 @@ public:
 		}
 		
 		for(int tempo = 0; this->done(); tempo++) {
-			/* pegar processo da heap */
-			for (processo_guardado proc = this->processos_futuros.front(); proc.chegada <= tempo; proc = this->processos_futuros.front()) {
-				this->processos_esperando_lancamento.push_processo(proc);
-				std::pop_heap(this->processos_esperando_lancamento.begin(), this->processos_esperando_lancamento.end());
-				this->processos_esperando_lancamento.pop_back();
+		
+			/* Receber processos(O tempo de chegada do processo foi atingido*/
+			for (processo_guardado proc = this->processos_a_receber.front(); proc.chegada <= tempo; this->processos_a_receber.pop_back(), proc = this->processos_a_receber.front()) {
+				std::pop_heap(this->processos_a_receber.begin(), this->processos_a_receber.end());
+				
+				proc.
+				
+				
 			};
+			
+			
 				
 			/* execucao */
 			
