@@ -2,5 +2,5 @@
 
 CPPFLAGS = -Wall -Wextra -pedantic
 
-exec : main.cpp
-    g++ $(CPPARGS) $^ -o $@
+exec: main.cpp
+	g++ $(CPPFLAGS) $< -o $@
