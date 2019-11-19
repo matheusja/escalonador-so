@@ -1,3 +1,6 @@
 
 
-exec : escalonador.cpp escalonador.hpp main.cpp
+CPPFLAGS = -Wall -Wextra -pedantic
+
+exec : main.cpp
+    g++ $(CPPARGS) $^ -o $@
