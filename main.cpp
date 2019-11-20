@@ -11,46 +11,49 @@
 
 struct processo_guardado {
     int chegada;
+    int prioridade_inicial;
     long int duracao;
     long int memoria;
-    int prioridade_inicial;
 };
 
 
-bool comparador_maior_que(processo_guardado &left, processo_guardado &right) { /* std::sort requer isso */
+static bool comparador_maior_que(processo_guardado &left, processo_guardado &right) { /* std::sort requer isso */
 	return left.chegada > right.chegada;
 }
 
-std::istream &operator>>(std::istream &strm, processo_guardado &reg_processo) {
+static std::istream &operator>>(std::istream &strm, processo_guardado &reg_processo) {
 	char virg;
 	strm >> reg_processo.chegada >> virg >> reg_processo.duracao >> virg >> reg_processo.memoria >> virg >> reg_processo.prioridade_inicial;
+	if (reg_processo.memoria % 64 != 0) {
+        std::cerr << "Erro: foi encontrado um valor estranho na memoria, esperava um multiplo de 64, encontrado " << reg_processo.memoria << "\n";
+	}
 	return strm;
 }
 
 struct processo_na_fila {
     const static int TIME_UNTIL_PROMOTION = 10;
     enum class status {
-    	/** O processo ficou TIME_UNTIL_PROMOTION na mesma fila, logo sua prioriade deve mudar(ou, não, se tiver prioridade 0 ou sempre ter prioridade 4)*/
-        change_priority,
 		/** O processo encerrou a execução, retire-o da fila*/
         terminate,
         /** O processo ficou o quantum determinado na CPU, mas ainda não encerrou a execução, voltar para a fila*/
         wait
     };
-    int prioridade_inicial;
-    int prioridade_atual;
     long int duracao;
     long int tempo_restante;
     long int memoria;
+    int prioridade_inicial;
+    int prioridade_atual;
     int time_in_queue;
     int lancamento;
-    bool ascending;
     int chegada;
-    processo_na_fila(){};
-    processo_na_fila(const processo_guardado &ref, int time) :
-    		prioridade_inicial(ref.prioridade_inicial), prioridade_atual(ref.prioridade_inicial), duracao(ref.duracao), tempo_restante(ref.duracao),
-    		memoria(ref.memoria), time_in_queue(0),
-    		lancamento(time), ascending(false), chegada(ref.chegada) { };
+    bool ascending;
+    processo_na_fila(){}
+    processo_na_fila(const processo_guardado &ref, int time) : duracao(ref.duracao), tempo_restante(ref.duracao), memoria(ref.memoria),
+    		prioridade_inicial(ref.prioridade_inicial), prioridade_atual(ref.prioridade_inicial), time_in_queue(0),
+    		lancamento(time), chegada(ref.chegada), ascending(false) { }
+    processo_na_fila(const processo_na_fila &ref) {
+        *this = ref;
+    }
    	struct processo_na_fila &operator=(const processo_na_fila &ref) {
    		prioridade_inicial = ref.prioridade_inicial;
    		prioridade_atual = ref.prioridade_atual;
@@ -69,14 +72,11 @@ struct processo_na_fila {
             return status::terminate;
         }
         this->time_in_queue++;
-        if (this->time_in_queue == TIME_UNTIL_PROMOTION) {
-            return status::change_priority;
-        }
         return status::wait;
-    };
+    }
 };
 
-std::ostream &operator<<(std::ostream &strm, processo_na_fila &processo) {
+static std::ostream &operator<<(std::ostream &strm, processo_na_fila &processo) {
 	return strm << processo.chegada << "," << processo.lancamento << "," << processo.duracao;
 }
 
@@ -89,8 +89,6 @@ class fila_de_processos {
 private:
 	std::vector<processo_guardado> processos_a_lancar;
 	std::queue<processo_na_fila> processos;
-	int prioridade;
-	bool degradar; /* Se é possível que a prioridade caia */
 
 	void lancar_processos_possiveis(int &mem_disp, int tempo) {
 		std::vector<processo_guardado>::iterator it(processos_a_lancar.begin());
@@ -120,12 +118,13 @@ public:
 		wait,
 		/** Um processo encerrou sua execução - imprimí-lo*/
 		process_terminated,
-		/** Um processo ira sair dessa fila e entrará em outra*/
-		change_priority,
 		/** Não há processos na fila - dar oportunidade a próxima fila*/
 		nill
 	};
-	fila_de_processos(int prioridade, bool degradar) : prioridade(prioridade), degradar(degradar) {};
+	const bool degradar; /* Se é possível que a prioridade caia */
+
+
+	fila_de_processos(bool degradar) : degradar(degradar) {}
 
 	status simular1slice(int &mem_disp, int tempo, processo_na_fila &write_process) {
 		lancar_processos_possiveis(mem_disp, tempo);
@@ -134,11 +133,6 @@ public:
 		}
 		write_process = processos.front();
 		switch (write_process++) {
-			case processo_na_fila::status::change_priority:
-				if (degradar)
-					return status::change_priority;
-				else /* fila 0 nao muda e isso é tratado aqui*/
-					return status::wait;
 			case processo_na_fila::status::terminate:
 				return status::process_terminated;
 			case processo_na_fila::status::wait:
@@ -146,17 +140,17 @@ public:
 		}
 		std::cerr << "Erro em " << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << " : temos um erro no switch logo atras!\n";
 		std::terminate();
-	};
+	}
 
 	void push_processo(processo_guardado processo) {
 		processos_a_lancar.push_back(processo);
-	};
+	}
 	void queue_processo(processo_na_fila processo) {
 		processos.push(processo);
 	}
 	bool vazia() {
 		return processos.empty() && processos_a_lancar.empty();
-	};
+	}
 };
 
 
@@ -175,9 +169,9 @@ private:
 public:
 	escalonador(int cpus, int mem, std::istream &istrm) : cpus(cpus), mem(mem), istrm(istrm) {
 		for(int i = 0; i < NUMERO_DE_FILAS; i++) {
-			filas.push_back(fila_de_processos(i, i != 0));
+			filas.push_back(fila_de_processos(i != 0));
 		}
-	};
+	}
 	void run(std::ostream &ostrm) {
 		while (this->istrm) {
 			processo_guardado proc;
@@ -206,7 +200,7 @@ public:
 			*/
 			while(!this->processos_a_receber.empty() && this->processos_a_receber.back().chegada <= tempo) {
 				processo_guardado proc = this->processos_a_receber.back();
-				this->filas[proc.prioridade_inicial].push_processo(proc);
+				this->filas[std::vector<fila_de_processos>::size_type(proc.prioridade_inicial)].push_processo(proc);
 				this->processos_a_receber.pop_back();
 			}
 			/*
@@ -215,19 +209,17 @@ public:
 			for (int _ = 0; _ < cpus; cpus++) {
 				feito = true;
 				processo_na_fila ref;
-				for(int i = 0; feito && i < NUMERO_DE_FILAS; i++) {
+				for(std::vector<fila_de_processos>::size_type i = 0; feito && i < NUMERO_DE_FILAS; i++) {
 					fila_de_processos::status st = filas[i].simular1slice(tempo, mem, ref);
 					feito = feito && st == fila_de_processos::status::nill;
 					switch (st){
 						case fila_de_processos::status::process_terminated:
 							processos_a_finalizar.push_back(ref);
 							break;
-						case fila_de_processos::status::change_priority:
-							processos_a_recolocar.push_back(ref);
-							break;
 						case fila_de_processos::status::wait:
+                            processos_a_recolocar.push_back(ref);
+							break;
 						case fila_de_processos::status::nill:
-						default:
 							break;
 					}
 				}
@@ -241,8 +233,8 @@ public:
 			std::for_each(processos_a_recolocar.begin(), processos_a_recolocar.end(), [&filas = this->filas] (processo_na_fila &process) {
 				/* processos com prioridade inicial minima nao mudam*/
 				if (process.prioridade_inicial == NUMERO_DE_FILAS - 1 ||
-                    /* processos que executam com prioridade maxima nao mudam*/
-                    process.prioridade_inicial == 0 ||
+                    /* processos que executam com prioridade maxima(degradar == false) nao mudam*/
+                    !filas[std::vector<fila_de_processos>::size_type(process.prioridade_atual)].degradar ||
                     /* processos nao executaram */
                     process.time_in_queue != processo_na_fila::TIME_UNTIL_PROMOTION
 				) {
@@ -262,16 +254,17 @@ public:
 				else {
 					process.prioridade_atual++;
 				}
-				filas[process.prioridade_atual].queue_processo(process);
+				filas[std::vector<fila_de_processos>::size_type(process.prioridade_atual)].queue_processo(process);
 			} );
             std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
+                processo.duracao = tempo - processo.duracao;
                 ostrm << processo;
             });
 		}
-	};
+	}
 };
 
-std::ostream &operator<<(std::ostream &strm, escalonador &esc) {
+static std::ostream &operator<<(std::ostream &strm, escalonador &esc) {
 	esc.run(strm);
 	return strm;
 }
