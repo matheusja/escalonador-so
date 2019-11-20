@@ -2,11 +2,12 @@
 #include <cstddef> /* std::size_t*/
 #include <cstdlib> /* std::atoi */
 
-#include <algorithm> /* std::make_heap */
+#include <algorithm> /* std::sort */
 #include <exception> /* std::terminate */
 #include <fstream> /* std::ifstream */
 #include <iostream> /* std::c{err, out}*/
 #include <queue>  /* std::queue */
+#include <utility> /* std::as_const*/
 
 struct processo_guardado {
     int chegada;
@@ -16,8 +17,8 @@ struct processo_guardado {
 };
 
 
-bool operator<(processo_guardado &left, processo_guardado &right) { /* std::make_heap requer isso */
-	return left.chegada < right.chegada; 
+bool comparador_maior_que(processo_guardado &left, processo_guardado &right) { /* std::sort requer isso */
+	return left.chegada > right.chegada;
 }
 
 std::istream &operator>>(std::istream &strm, processo_guardado &reg_processo) {
@@ -30,7 +31,7 @@ struct processo_na_fila {
     const static int TIME_UNTIL_PROMOTION = 10;
     enum class status {
     	/** O processo ficou TIME_UNTIL_PROMOTION na mesma fila, logo sua prioriade deve mudar(ou, não, se tiver prioridade 0 ou sempre ter prioridade 4)*/
-        change_priority, 
+        change_priority,
 		/** O processo encerrou a execução, retire-o da fila*/
         terminate,
         /** O processo ficou o quantum determinado na CPU, mas ainda não encerrou a execução, voltar para a fila*/
@@ -143,6 +144,8 @@ public:
 			case processo_na_fila::status::wait:
 				return status::wait;
 		}
+		std::cerr << "Erro em " << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << " : temos um erro no switch logo atras!\n";
+		std::terminate();
 	};
 
 	void push_processo(processo_guardado processo) {
@@ -166,7 +169,7 @@ private:
 	std::vector<processo_na_fila> processos_a_recolocar;
 	std::vector<processo_na_fila> processos_a_finalizar;
 	std::istream &istrm;
-	
+
 
 	const static int NUMERO_DE_FILAS = 5;
 public:
@@ -181,22 +184,28 @@ public:
 			this->istrm >> proc;
 			if (this->mem < proc.memoria) {
 				std::cerr << "Erro: ha um processo que requer mais memoria que o possivel\n";
+				std::terminate();
 			}
 			this->processos_a_receber.push_back(proc);
 		}
-		std::make_heap(this->processos_a_receber.rbegin(), this->processos_a_receber.rend());
-		
+        /*
+            std::sort((range), comparador
+            se
+            comparador(a1, a2) = true, entao a1 vem antes de a2
+            Logo como eu faço a1 > a2, então isso fica em ordem decrescente
+        */
+
+		std::sort(this->processos_a_receber.begin(), this->processos_a_receber.end(), comparador_maior_que);
+
 		bool feito = false;
 		for(int tempo = 0; !feito; tempo++) {
-		
+
 			/* Receber processos(O tempo de chegada do processo foi atingido), parar quando:
 				Os processos ainda não chegaram
 				Não há mais processos a serem recebidos
 			*/
-			while(!this->processos_a_receber.empty() && this->processos_a_receber.front().chegada <= tempo) {
-				processo_guardado proc = this->processos_a_receber.front();
-				!this->processos_a_receber.empty() && proc.chegada <= tempo;
-				std::pop_heap(this->processos_a_receber.begin(), this->processos_a_receber.end());
+			while(!this->processos_a_receber.empty() && this->processos_a_receber.back().chegada <= tempo) {
+				processo_guardado proc = this->processos_a_receber.back();
 				this->filas[proc.prioridade_inicial].push_processo(proc);
 				this->processos_a_receber.pop_back();
 			}
@@ -225,30 +234,39 @@ public:
 			}
 
 
-			std::vector<fila_de_processos> &filas = this->filas;
 			/*
-				Realizar as finalizacoes e relocacoes adequadas
+				Recolocar os processos nas filas adequadas
+				(eles sao retirados pois eu nao quero que 2 cpus executem o mesmo processo em um mesmo slice)
 			*/
-			std::for_each(processos_a_recolocar.begin(), processos_a_recolocar.end(), [&filas] (processo_na_fila &ref) {
+			std::for_each(processos_a_recolocar.begin(), processos_a_recolocar.end(), [&filas = this->filas] (processo_na_fila &process) {
 				/* processos com prioridade inicial minima nao mudam*/
-				if (ref.prioridade_inicial == NUMERO_DE_FILAS - 1) {}
-				else if (ref.prioridade_atual == ref.prioridade_inicial) {
-					ref.prioridade_atual++;
-					ref.ascending = false;
+				if (process.prioridade_inicial == NUMERO_DE_FILAS - 1 ||
+                    /* processos que executam com prioridade maxima nao mudam*/
+                    process.prioridade_inicial == 0 ||
+                    /* processos nao executaram */
+                    process.time_in_queue != processo_na_fila::TIME_UNTIL_PROMOTION
+				) {
+                    /*Nao alterar prioridade*/
 				}
-				else if (ref.prioridade_atual == NUMERO_DE_FILAS - 1) {
-					ref.prioridade_atual--;
-					ref.ascending = true;
+				else if (process.prioridade_atual == process.prioridade_inicial) {
+					process.prioridade_atual++;
+					process.ascending = false;
 				}
-				else if (ref.ascending) {
-					ref.prioridade_atual--;
+				else if (process.prioridade_atual == NUMERO_DE_FILAS - 1) {
+					process.prioridade_atual--;
+					process.ascending = true;
+				}
+				else if (process.ascending) {
+					process.prioridade_atual--;
 				}
 				else {
-					ref.prioridade_atual++;
+					process.prioridade_atual++;
 				}
-				filas[ref.prioridade_atual].queue_processo(ref);
+				filas[process.prioridade_atual].queue_processo(process);
 			} );
-
+            std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
+                ostrm << processo;
+            });
 		}
 	};
 };
@@ -263,9 +281,9 @@ std::ostream &operator<<(std::ostream &strm, escalonador &esc) {
 	1º o nome do programa
 	2º nº de cpus
 	3º quantidade de memoria
-	4º nome do arquivo de entrada  
-	
-	
+	4º nome do arquivo de entrada
+
+
 */
 int main(int argc, char **argv) {
 	if (argc != 4) {
@@ -274,10 +292,10 @@ int main(int argc, char **argv) {
 	}
 	std::ifstream file(argv[3]);
 	escalonador esc((int)std::atoi(argv[1]), std::atoi(argv[2]), file);
-	
-	std::cout << esc << "\n";
-	
-	
+
+	std::cout << esc;
+
+
     return 0;
 }
 
