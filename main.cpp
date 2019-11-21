@@ -40,6 +40,7 @@ struct processo_na_fila {
     };
     long int duracao;
     long int tempo_restante;
+    long int tempo_projetado;
     long int memoria;
     int prioridade_inicial;
     int prioridade_atual;
@@ -48,7 +49,7 @@ struct processo_na_fila {
     int chegada;
     bool ascending;
     processo_na_fila(){}
-    processo_na_fila(const processo_guardado &ref, int time) : duracao(ref.duracao), tempo_restante(ref.duracao), memoria(ref.memoria),
+    processo_na_fila(const processo_guardado &ref, int time) : duracao(ref.duracao), tempo_restante(ref.duracao), tempo_projetado(ref.duracao), memoria(ref.memoria),
     		prioridade_inicial(ref.prioridade_inicial), prioridade_atual(ref.prioridade_inicial), time_in_queue(0),
     		lancamento(time), chegada(ref.chegada), ascending(false) { }
     processo_na_fila(const processo_na_fila &ref) {
@@ -57,13 +58,14 @@ struct processo_na_fila {
    	struct processo_na_fila &operator=(const processo_na_fila &ref) {
    		prioridade_inicial = ref.prioridade_inicial;
    		prioridade_atual = ref.prioridade_atual;
-   		duracao = ref.duracao;
+   		tempo_projetado = ref.tempo_projetado;
    		tempo_restante = ref.tempo_restante;
-   		memoria = ref.memoria;
    		time_in_queue = ref.time_in_queue;
    		lancamento = ref.lancamento;
    		ascending = ref.ascending;
    		chegada = ref.chegada;
+   		memoria = ref.memoria;
+   		duracao = ref.duracao;
    		return *this;
    	}
     status operator++(int) {
@@ -77,7 +79,7 @@ struct processo_na_fila {
 };
 
 static std::ostream &operator<<(std::ostream &strm, processo_na_fila &processo) {
-	return strm << processo.chegada << "," << processo.lancamento << "," << processo.duracao;
+	return strm << processo.chegada << "," << processo.lancamento << "," << processo.tempo_projetado << "," << processo.duracao;
 }
 
 
@@ -256,9 +258,10 @@ public:
 				}
 				filas[std::vector<fila_de_processos>::size_type(process.prioridade_atual)].queue_processo(process);
 			} );
-            std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
+            std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&mem = this->mem, &ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
                 processo.duracao = tempo - processo.duracao;
-                ostrm << processo;
+                ostrm << processo << "\n";
+                mem += processo.memoria;
             });
 		}
 	}
