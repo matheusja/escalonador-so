@@ -115,7 +115,7 @@ public:
 
 	status simular1slice(int &mem_disp, const int &tempo, processo_na_fila &write_process) {
 		lancar_processos_possiveis(mem_disp, tempo);
-		if (processos_a_lancar.empty()) {
+		if (processos_a_lancar.empty() && processos.empty()) {
 			return status::nill;
 		}
 		write_process = processos.front();
@@ -145,7 +145,6 @@ class escalonador {
 private:
 	int cpus;
 	std::vector<fila_de_processos> filas;
-	std::vector<processo_guardado> processos_a_receber;
 	std::vector<processo_na_fila> processos_a_recolocar;
 	std::vector<processo_na_fila> processos_a_finalizar;
 	std::istream &istrm;
@@ -160,6 +159,7 @@ public:
 		}
 	}
 	void run(std::ostream &ostrm) {
+        std::vector<processo_guardado> processos_a_receber;
 		while (this->istrm) {
 			processo_guardado proc;
 			this->istrm >> proc;
@@ -167,7 +167,7 @@ public:
 				std::cerr << "Erro: ha um processo que requer mais memoria que o possivel\n";
 				std::exit(1);
 			}
-			this->processos_a_receber.push_back(proc);
+			processos_a_receber.push_back(proc);
 		}
         /*
             std::sort((range), comparador
@@ -176,7 +176,7 @@ public:
             Logo como eu faço a1 > a2, então isso fica em ordem decrescente
         */
 
-		std::sort(this->processos_a_receber.begin(), this->processos_a_receber.end(), comparador_maior_que);
+		std::sort(processos_a_receber.begin(), processos_a_receber.end(), comparador_maior_que);
 
 		bool feito = false;
 		for(int tempo = 0; !feito; tempo++) {
@@ -185,18 +185,17 @@ public:
 				Os processos ainda não chegaram
 				Não há mais processos a serem recebidos
 			*/
-			while(!this->processos_a_receber.empty() && this->processos_a_receber.back().chegada <= tempo) {
-				processo_guardado proc = this->processos_a_receber.back();
+			while(!processos_a_receber.empty() && processos_a_receber.back().chegada <= tempo) {
+				processo_guardado proc = processos_a_receber.back();
 				this->filas[std::vector<fila_de_processos>::size_type(proc.prioridade_inicial)].push_processo(proc);
-				this->processos_a_receber.pop_back();
+				processos_a_receber.pop_back();
 			}
 			/*
 				Executar os processos
 			*/
 			for (int _ = 0; _ < cpus; cpus++) {
-				feito = true;
 				processo_na_fila ref;
-				for(std::vector<fila_de_processos>::iterator it = filas.begin(); feito && it != filas.end(); it++) {
+				for(std::vector<fila_de_processos>::iterator it = filas.begin();it != filas.end(); it++) {
 					fila_de_processos::status st = it->simular1slice(this->mem, tempo, ref);
 					feito = feito && st == fila_de_processos::status::nill;
 					switch (st){
@@ -211,7 +210,6 @@ public:
 					}
 				}
 			}
-            feito = feito && this->processos_a_receber.empty();
 
 
 			/*
@@ -249,6 +247,12 @@ public:
                 ostrm << processo << "\n";
                 mem += processo.memoria;
             });
+
+
+            feito = feito;
+            for (auto itfila = filas.begin(); itfila != filas.end(); itfila++) {
+                feito = feito && itfila->vazia();
+            }
 		}
 	}
 };
