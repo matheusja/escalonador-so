@@ -1,9 +1,8 @@
 
 #include <cstddef> /* std::size_t*/
-#include <cstdlib> /* std::atoi */
+#include <cstdlib> /* std::{atoi, exit} */
 
 #include <algorithm> /* std::sort */
-#include <exception> /* std::terminate */
 #include <fstream> /* std::ifstream */
 #include <iostream> /* std::c{err, out}*/
 #include <queue>  /* std::queue */
@@ -92,7 +91,7 @@ private:
 	std::vector<processo_guardado> processos_a_lancar;
 	std::queue<processo_na_fila> processos;
 
-	void lancar_processos_possiveis(int &mem_disp, int tempo) {
+	void lancar_processos_possiveis(int &mem_disp, const int tempo) {
 		std::vector<processo_guardado>::iterator it(processos_a_lancar.begin());
 		while (it != processos_a_lancar.end() && it->memoria < mem_disp) {
 			mem_disp -= it->memoria;
@@ -128,7 +127,7 @@ public:
 
 	fila_de_processos(bool degradar) : degradar(degradar) {}
 
-	status simular1slice(int &mem_disp, int tempo, processo_na_fila &write_process) {
+	status simular1slice(int &mem_disp, const int &tempo, processo_na_fila &write_process) {
 		lancar_processos_possiveis(mem_disp, tempo);
 		if (processos_a_lancar.empty()) {
 			return status::nill;
@@ -141,7 +140,7 @@ public:
 				return status::wait;
 		}
 		std::cerr << "Erro em " << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << " : temos um erro no switch logo atras!\n";
-		std::terminate();
+		std::exit(1);
 	}
 
 	void push_processo(processo_guardado processo) {
@@ -159,7 +158,6 @@ public:
 class escalonador {
 private:
 	int cpus;
-	int mem;
 	std::vector<fila_de_processos> filas;
 	std::vector<processo_guardado> processos_a_receber;
 	std::vector<processo_na_fila> processos_a_recolocar;
@@ -169,7 +167,8 @@ private:
 
 	const static int NUMERO_DE_FILAS = 5;
 public:
-	escalonador(int cpus, int mem, std::istream &istrm) : cpus(cpus), mem(mem), istrm(istrm) {
+	int mem;
+	escalonador(int cpus, int mem, std::istream &istrm) : cpus(cpus), istrm(istrm), mem(mem) {
 		for(int i = 0; i < NUMERO_DE_FILAS; i++) {
 			filas.push_back(fila_de_processos(i != 0));
 		}
@@ -180,7 +179,7 @@ public:
 			this->istrm >> proc;
 			if (this->mem < proc.memoria) {
 				std::cerr << "Erro: ha um processo que requer mais memoria que o possivel\n";
-				std::terminate();
+				std::exit(1);
 			}
 			this->processos_a_receber.push_back(proc);
 		}
@@ -211,8 +210,8 @@ public:
 			for (int _ = 0; _ < cpus; cpus++) {
 				feito = true;
 				processo_na_fila ref;
-				for(std::vector<fila_de_processos>::size_type i = 0; feito && i < NUMERO_DE_FILAS; i++) {
-					fila_de_processos::status st = filas[i].simular1slice(tempo, mem, ref);
+				for(std::vector<fila_de_processos>::iterator it = filas.begin(); feito && it != filas.end(); it++) {
+					fila_de_processos::status st = it->simular1slice(this->mem, tempo, ref);
 					feito = feito && st == fila_de_processos::status::nill;
 					switch (st){
 						case fila_de_processos::status::process_terminated:
@@ -226,6 +225,7 @@ public:
 					}
 				}
 			}
+            feito = feito && this->processos_a_receber.empty();
 
 
 			/*
@@ -284,7 +284,7 @@ static std::ostream &operator<<(std::ostream &strm, escalonador &esc) {
 int main(int argc, char **argv) {
 	if (argc != 4) {
 		std::cerr << "Erro: argumentos devem ser: numero de cpus, quantidade de memoria, nome do arquivo de entrada(nessa ordem)\n";
-		std::terminate();
+		std::exit(1);
 	}
 	std::ifstream file(argv[3]);
 	escalonador esc((int)std::atoi(argv[1]), std::atoi(argv[2]), file);
