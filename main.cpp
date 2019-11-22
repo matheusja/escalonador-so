@@ -92,24 +92,10 @@ private:
 	std::queue<processo_na_fila> processos;
 
 	void lancar_processos_possiveis(int &mem_disp, const int tempo) {
-		std::vector<processo_guardado>::iterator it(processos_a_lancar.begin());
-		while (it != processos_a_lancar.end() && it->memoria < mem_disp) {
-			mem_disp -= it->memoria;
-			processos.push(processo_na_fila(*it, tempo));
-			processos_a_lancar.erase(it);
-
-			it = processos_a_lancar.begin(); /* std::vector::erase pode invalidar o iterador(e os seus sucessores)*/
-		}
-		for(std::vector<processo_guardado>::iterator prox = it; it != processos_a_lancar.end(); it = prox) {
-			prox++;
-			while (prox != processos_a_lancar.end() && prox->memoria < mem_disp) {
-				mem_disp -= prox->memoria;
-				processos.push(processo_na_fila(*prox, tempo));
-				processos_a_lancar.erase(prox); /* erase nao invalida os anteriores*/
-
-				prox = it;
-				prox++;
-			}
+		for (std::vector<processo_guardado>::size_type i = 0; i < processos_a_lancar.size() && processos_a_lancar[i].memoria < mem_disp; i++) {
+            mem_disp -= processos_a_lancar[i].memoria;
+            processos.push(processo_na_fila(processos_a_lancar[i], tempo));
+            processos_a_lancar.erase(begin(processos_a_lancar) + i);
 		}
 	}
 
