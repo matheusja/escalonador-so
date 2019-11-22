@@ -193,7 +193,7 @@ public:
 			/*
 				Executar os processos
 			*/
-			for (int _ = 0; _ < cpus; cpus++) {
+			for (int _ = 0; _ < cpus; _++) {
 				processo_na_fila ref;
 				for(std::vector<fila_de_processos>::iterator it = filas.begin();it != filas.end(); it++) {
 					fila_de_processos::status st = it->simular1slice(this->mem, tempo, ref);
