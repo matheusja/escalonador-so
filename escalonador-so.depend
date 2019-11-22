@@ -9,3 +9,12 @@
 	<queue>
 	<utility>
 
+1574428220 source:/media/vitech/mdsjahnke/escalonador-so/main.cpp
+	<cstddef>
+	<cstdlib>
+	<algorithm>
+	<fstream>
+	<iostream>
+	<queue>
+	<utility>
+
