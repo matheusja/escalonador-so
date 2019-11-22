@@ -91,7 +91,7 @@ private:
 	std::vector<processo_guardado> processos_a_lancar;
 	std::queue<processo_na_fila> processos;
 
-	void lancar_processos_possiveis(int &mem_disp, bool &block_launch, const int tempo) {
+	void lancar_processos_possiveis(int &mem_disp, const int tempo) {
 		std::vector<processo_guardado>::iterator it(processos_a_lancar.begin());
 		while (it != processos_a_lancar.end() && it->memoria < mem_disp) {
 			mem_disp -= it->memoria;
@@ -111,7 +111,6 @@ private:
 				prox++;
 			}
 		}
-		block_launch = !processos_a_lancar.empty();
 	}
 
 public:
@@ -128,10 +127,8 @@ public:
 
 	fila_de_processos(bool degradar) : degradar(degradar) {}
 
-	status simular1slice(int &mem_disp, const int &tempo, bool &block_launch, processo_na_fila &write_process) {
-        if (!block_launch) {
-            lancar_processos_possiveis(mem_disp, block_launch, tempo);
-		}
+	status simular1slice(int &mem_disp, const int &tempo, processo_na_fila &write_process) {
+		lancar_processos_possiveis(mem_disp, tempo);
 		if (processos_a_lancar.empty()) {
 			return status::nill;
 		}
@@ -213,9 +210,8 @@ public:
 			for (int _ = 0; _ < cpus; cpus++) {
 				feito = true;
 				processo_na_fila ref;
-				bool block_launch = false;
 				for(std::vector<fila_de_processos>::iterator it = filas.begin(); feito && it != filas.end(); it++) {
-					fila_de_processos::status st = it->simular1slice(this->mem, tempo, block_launch, ref);
+					fila_de_processos::status st = it->simular1slice(this->mem, tempo, ref);
 					feito = feito && st == fila_de_processos::status::nill;
 					switch (st){
 						case fila_de_processos::status::process_terminated:
