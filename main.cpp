@@ -243,14 +243,14 @@ public:
 				}
 				filas[std::vector<fila_de_processos>::size_type(process.prioridade_atual)].queue_processo(process);
 			} );
-            processos_a_recolocar.erase(processos_a_recolocar.begin(), processos_a_recolocar.end());
+            processos_a_recolocar.clear();
 
             std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&mem = this->mem, &ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
                 processo.duracao = tempo - processo.duracao;
                 ostrm << processo << "\n";
                 mem += processo.memoria;
             });
-            processos_a_finalizar.erase(processos_a_finalizar.begin(), processos_a_finalizar.end());
+            processos_a_finalizar.clear();
 
 
             feito = feito;
