@@ -144,22 +144,22 @@ public:
 class escalonador {
 private:
 	int cpus;
+	int mem;
 	std::vector<fila_de_processos> filas;
-	std::vector<processo_na_fila> processos_a_recolocar;
-	std::vector<processo_na_fila> processos_a_finalizar;
 	std::istream &istrm;
 
 
 	const static int NUMERO_DE_FILAS = 5;
 public:
-	int mem;
-	escalonador(int cpus, int mem, std::istream &istrm) : cpus(cpus), istrm(istrm), mem(mem) {
+	escalonador(int cpus, int mem, std::istream &istrm) : cpus(cpus), mem(mem), istrm(istrm) {
 		for(int i = 0; i < NUMERO_DE_FILAS; i++) {
 			filas.push_back(fila_de_processos(i != 0));
 		}
 	}
 	void run(std::ostream &ostrm) {
         std::vector<processo_guardado> processos_a_receber;
+        std::vector<processo_na_fila> processos_a_recolocar;
+        std::vector<processo_na_fila> processos_a_finalizar;
 		while (this->istrm) {
 			processo_guardado proc;
 			this->istrm >> proc;
@@ -195,9 +195,10 @@ public:
 			*/
 			for (int _ = 0; _ < cpus; _++) {
 				processo_na_fila ref;
-				for(std::vector<fila_de_processos>::iterator it = filas.begin();it != filas.end(); it++) {
+				bool cpu_usada = false;
+				for(std::vector<fila_de_processos>::iterator it = filas.begin(); !cpu_usada && it != filas.end(); it++) {
 					fila_de_processos::status st = it->simular1slice(this->mem, tempo, ref);
-					feito = feito && st == fila_de_processos::status::nill;
+					cpu_usada = st == fila_de_processos::status::nill;
 					switch (st){
 						case fila_de_processos::status::process_terminated:
 							processos_a_finalizar.push_back(ref);
@@ -242,11 +243,14 @@ public:
 				}
 				filas[std::vector<fila_de_processos>::size_type(process.prioridade_atual)].queue_processo(process);
 			} );
+            processos_a_recolocar.erase(processos_a_recolocar.begin(), processos_a_recolocar.end());
+
             std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&mem = this->mem, &ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
                 processo.duracao = tempo - processo.duracao;
                 ostrm << processo << "\n";
                 mem += processo.memoria;
             });
+            processos_a_finalizar.erase(processos_a_finalizar.begin(), processos_a_finalizar.end());
 
 
             feito = feito;
