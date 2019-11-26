@@ -256,8 +256,8 @@ public:
             processos_a_finalizar.clear();
 
 
-            feito = feito;
-            for (auto itfila = filas.begin(); itfila != filas.end(); itfila++) {
+            feito = processos_a_receber.empty();
+            for (auto itfila = filas.begin(); feito && itfila != filas.end(); itfila++) {
                 feito = feito && itfila->vazia();
             }
 		}
