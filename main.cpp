@@ -2,9 +2,10 @@
 #include <cstddef> /* std::size_t*/
 #include <cstdlib> /* std::{atoi, exit} */
 
-#include <algorithm> /* std::sort */
+#include <algorithm> /* std::{sort, for_each}*/
 #include <fstream> /* std::ifstream */
 #include <iostream> /* std::c{err, out}*/
+#include <iterator> /* std::istream_iterator */
 #include <queue>  /* std::queue */
 #include <utility> /* std::as_const*/
 
@@ -163,15 +164,13 @@ public:
         std::vector<processo_na_fila> processos_a_finalizar;
 
 
-		 {
-			processo_guardado proc;
-			this->istrm >> proc;
-			if (this->mem < proc.memoria) {
+		std::for_each(std::istream_iterator<processo_guardado>(this->istrm), std::istream_iterator<processo_guardado>(), [mem = this->mem, &processos_a_receber] (processo_guardado proc){
+			if (mem < proc.memoria) {
 				std::cerr << "Erro: ha um processo que requer mais memoria que o possivel\n";
 				std::exit(1);
 			}
 			processos_a_receber.push_back(proc);
-		}
+		});
         /*
             std::sort((range), comparador)
             se
