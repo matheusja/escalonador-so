@@ -119,6 +119,7 @@ public:
 			return status::nill;
 		}
 		write_process = processos.front();
+		processos.pop();
 		switch (write_process++) {
 			case processo_na_fila::status::terminate:
 				return status::process_terminated;
@@ -160,7 +161,9 @@ public:
         std::vector<processo_guardado> processos_a_receber;
         std::vector<processo_na_fila> processos_a_recolocar;
         std::vector<processo_na_fila> processos_a_finalizar;
-		while (this->istrm) {
+
+
+		 {
 			processo_guardado proc;
 			this->istrm >> proc;
 			if (this->mem < proc.memoria) {
@@ -170,7 +173,7 @@ public:
 			processos_a_receber.push_back(proc);
 		}
         /*
-            std::sort((range), comparador
+            std::sort((range), comparador)
             se
             comparador(a1, a2) = true, entao a1 vem antes de a2
             Logo como eu faço a1 > a2, então isso fica em ordem decrescente
@@ -198,7 +201,7 @@ public:
 				bool cpu_usada = false;
 				for(std::vector<fila_de_processos>::iterator it = filas.begin(); !cpu_usada && it != filas.end(); it++) {
 					fila_de_processos::status st = it->simular1slice(this->mem, tempo, ref);
-					cpu_usada = st == fila_de_processos::status::nill;
+					cpu_usada = st != fila_de_processos::status::nill;
 					switch (st){
 						case fila_de_processos::status::process_terminated:
 							processos_a_finalizar.push_back(ref);
@@ -246,7 +249,7 @@ public:
             processos_a_recolocar.clear();
 
             std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&mem = this->mem, &ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila &processo) {
-                processo.duracao = tempo - processo.duracao;
+                processo.duracao = tempo - processo.duracao + 1;
                 ostrm << processo << "\n";
                 mem += processo.memoria;
             });
