@@ -79,7 +79,7 @@ struct processo_na_fila {
 };
 
 static std::ostream &operator<<(std::ostream &strm, processo_na_fila &processo) {
-	return strm << processo.chegada << "," << processo.lancamento << "," << processo.tempo_projetado << "," << processo.duracao;
+	return strm << processo.chegada << ", " << processo.lancamento << ", " << processo.tempo_projetado << ", " << processo.duracao;
 }
 
 
