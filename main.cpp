@@ -243,7 +243,7 @@ class escalonador {
       } );
       processos_a_recolocar.clear();
 
-      std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&mem = this->mem, &ostrm, &tempo = const_cast<const int &>(tempo)] (processo_na_fila & processo) {
+      std::for_each(processos_a_finalizar.begin(), processos_a_finalizar.end(), [&mem = this->mem, &ostrm, tempo] (processo_na_fila & processo) {
         processo.duracao = tempo - processo.lancamento + 1;
         ostrm << processo << "\n";
         mem += processo.memoria;
