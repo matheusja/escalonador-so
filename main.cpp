@@ -93,10 +93,14 @@ class fila_de_processos {
   std::queue<processo_na_fila> processos;
 
   void lancar_processos_possiveis(int &mem_disp, const int tempo) {
-    for (std::vector<processo_guardado>::size_type i = 0; i < processos_a_lancar.size() && processos_a_lancar[i].memoria <= mem_disp; i++) {
-      mem_disp -= processos_a_lancar[i].memoria;
-      processos.push(processo_na_fila(processos_a_lancar[i], tempo));
-      processos_a_lancar.erase(begin(processos_a_lancar) + i);
+    for (std::vector<processo_guardado>::size_type i = 0; i < processos_a_lancar.size();) {
+			if (processos_a_lancar[i].memoria <= mem_disp) {
+				mem_disp -= processos_a_lancar[i].memoria;
+				processos.push(processo_na_fila(processos_a_lancar[i], tempo));
+				processos_a_lancar.erase(begin(processos_a_lancar) + i);
+			} else {
+				i++;
+			}
     }
   }
 
