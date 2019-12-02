@@ -278,14 +278,15 @@ static std::ostream &operator<<(std::ostream &strm, escalonador &esc) {
 
 */
 int main(int argc, char **argv) {
-  if (argc != 4) {
-    std::cerr << "Erro: argumentos devem ser: numero de cpus, quantidade de memoria, nome do arquivo de entrada(nessa ordem)\n";
+  if (argc != 5) {
+    std::cerr << "Erro: argumentos devem ser: numero de cpus, quantidade de memoria, nome do arquivo de entrada, nome do arquivo de saida(nessa ordem)\n";
     std::exit(1);
   }
   std::ifstream file(argv[3]);
+  std::ofstream file_out(argv[4]);
   escalonador esc((int)std::atoi(argv[1]), std::atoi(argv[2]), file);
 
-  std::cout << esc;
+  file_out << esc;
 
 
   return 0;
